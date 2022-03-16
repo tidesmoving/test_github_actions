@@ -26,7 +26,11 @@ jobs:
         run: |
           set -o pipefail
           mkdir -p artifacts/tests 
-          pytest | tee artifacts/tests/output.txt
+          pytest \
+            --junitxml=artifacts/tests/results.xml \
+            --cov-report=xml:artifacts/tests/coverage.xml \
+            --cov-report=html:artifacts/tests/coverage.html \
+            | tee artifacts/tests/output.txt
       - name: Upload Test Results
         uses: actions/upload-artifact@v2
         with:
