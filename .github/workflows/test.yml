@@ -7,15 +7,6 @@ on:
     branches:
       - main
 jobs:
-  event_file:
-    name: "Event File"
-    runs-on: ubuntu-latest
-    steps:
-    - name: Upload
-      uses: actions/upload-artifact@v2
-      with:
-        name: Event File
-        path: ${{ github.event_path }}
   test:
     runs-on: ubuntu-latest
     steps:
@@ -87,3 +78,13 @@ jobs:
           event_file: artifacts/Event File/event.json
           event_name: ${{ github.event.workflow_run.event }}
           files: "artifacts/**/*.xml"
+    
+  event_file:
+    name: "Event File"
+    runs-on: ubuntu-latest
+    steps:
+    - name: Upload
+      uses: actions/upload-artifact@v2
+      with:
+        name: Event File
+        path: ${{ github.event_path }}
