@@ -7,6 +7,15 @@ on:
     branches:
       - main
 jobs:
+  event_file:
+    name: "Event File"
+    runs-on: ubuntu-latest
+    steps:
+    - name: Upload
+      uses: actions/upload-artifact@v2
+      with:
+        name: Event File
+        path: ${{ github.event_path }}
   test:
     runs-on: ubuntu-latest
     steps:
@@ -50,3 +59,24 @@ jobs:
           github-token: ${{github.token}}
           pytest-coverage-path: ./artifacts/tests/output.txt
           junitxml-path: ./artifacts/tests/results.xml
+      - name: Download and Extract Artifacts
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        run: |
+           mkdir -p artifacts && cd artifacts
+
+           artifacts_url=${{ github.event.workflow_run.artifacts_url }}
+
+           gh api "$artifacts_url" -q '.artifacts[] | [.name, .archive_download_url] | @tsv' | while read artifact
+           do
+             IFS=$'\t' read name url <<< "$artifact"
+             gh api $url > "$name.zip"
+             unzip -d "$name" "$name.zip"
+           done
+      - name: Publish Unit Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        with:
+          commit: ${{ github.event.workflow_run.head_sha }}
+          event_file: artifacts/Event File/event.json
+          event_name: ${{ github.event.workflow_run.event }}
+          files: "artifacts/**/*.xml"
