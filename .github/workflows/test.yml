@@ -59,6 +59,13 @@ jobs:
           github-token: ${{github.token}}
           pytest-coverage-path: ./artifacts/tests/output.txt
           junitxml-path: ./artifacts/tests/results.xml
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: Unit Test Results
+          path: |
+            ./artifacts/tests/*.xml
       - name: Download and Extract Artifacts
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
