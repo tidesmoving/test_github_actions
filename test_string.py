@@ -7,7 +7,7 @@ class TestStringMethods(unittest.TestCase):
 
     def test_isupper(self):
         self.assertTrue('FOO'.isupper())
-        self.assertTrue('Foo'.isupper())
+        self.assertFalse('Foo'.isupper())
 
     def test_split(self):
         s = 'hello world'
@@ -15,6 +15,7 @@ class TestStringMethods(unittest.TestCase):
         # check that s.split fails when the separator is not a string
         with self.assertRaises(TypeError):
             s.split(2)
+
 
 if __name__ == '__main__':
     unittest.main()
