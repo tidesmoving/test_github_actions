@@ -1,90 +1,33 @@
-name: Build
+# This workflow will install dependencies, create coverage tests and run Pytest Coverage Comment
+# For more information see: https://github.com/MishaKav/pytest-coverage-comment/
+name: pytest-coverage-comment
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
-      - main
+      - '*'
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          submodules: recursive
-      - name: Set up Python
+      - uses: actions/checkout@v2
+
+      - name: Set up Python 3.8
         uses: actions/setup-python@v2
         with:
-          python-version: "3.10"
-      - name: Install Dependencies
+          python-version: 3.8
+
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install pytest
-      - name: Test
-        run: |
-          set -o pipefail
-          mkdir -p artifacts/tests 
-          pytest \
-            --junitxml=artifacts/tests/results.xml \
-            --cov-report=xml:artifacts/tests/coverage.xml \
-            --cov-report=html:artifacts/tests/coverage.html \
-            | tee artifacts/tests/output.txt
-      - name: Upload Test Results
-        uses: actions/upload-artifact@v2
-        with:
-          name: test-results
-          path: artifacts/tests
-        if: ${{ always() }}
-      - name: Report Test Results
-        uses: EnricoMi/publish-unit-test-result-action/composite@v1
-        if: ${{ always() && github.event_name == 'pull_request'}}
-        with:
-          github_token: ${{github.token}}
-          files: ./artifacts/tests/results.xml
-      - name: Report Coverage
-        uses: MishaKav/pytest-coverage-comment@v1.1.6
-        if: ${{ success() && github.event_name == 'pull_request'}}
-        with:
-          github-token: ${{github.token}}
-          pytest-coverage-path: ./artifacts/tests/output.txt
-          junitxml-path: ./artifacts/tests/results.xml
-      - name: Upload Test Results
-        if: always()
-        uses: actions/upload-artifact@v2
-        with:
-          name: Unit Test Results
-          path: |
-            ./artifacts/tests/*.xml
-      - name: Download and Extract Artifacts
-        env:
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-        run: |
-           mkdir -p artifacts && cd artifacts
+          pip install flake8 pytest pytest-cov
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-           artifacts_url=${{ github.event.workflow_run.artifacts_url }}
+      - name: Build coverage file
+        run: |
+          pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=app tests/ | tee pytest-coverage.txt
 
-           gh api "$artifacts_url" -q '.artifacts[] | [.name, .archive_download_url] | @tsv' | while read artifact
-           do
-             IFS=$'\t' read name url <<< "$artifact"
-             gh api $url > "$name.zip"
-             unzip -d "$name" "$name.zip"
-           done
-      - name: Publish Unit Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v1
+      - name: Pytest coverage comment
+        uses: MishaKav/pytest-coverage-comment@main
         with:
-          commit: ${{ github.event.workflow_run.head_sha }}
-          event_file: artifacts/Event File/event.json
-          event_name: ${{ github.event.workflow_run.event }}
-          files: "artifacts/**/*.xml"
-    
-  event_file:
-    name: "Event File"
-    runs-on: ubuntu-latest
-    steps:
-    - name: Upload
-      uses: actions/upload-artifact@v2
-      with:
-        name: Event File
-        path: ${{ github.event_path }}
+          pytest-coverage-path: ./pytest-coverage.txt
+          junitxml-path: ./pytest.xml
